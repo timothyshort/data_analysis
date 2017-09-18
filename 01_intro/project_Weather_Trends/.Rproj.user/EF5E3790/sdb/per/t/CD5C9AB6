@@ -1,0 +1,29 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1505737558506.000,
+    "dirty" : false,
+    "encoding" : "",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "CD5C9AB6",
+    "lastKnownWriteTime" : 0,
+    "last_content_update" : 1505737558506,
+    "path" : null,
+    "project_path" : null,
+    "properties" : {
+        "cacheKey" : "36753841",
+        "caption" : "columbus_temp_data",
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=columbus_temp_data&cache_key=36753841",
+        "displayedObservations" : 271,
+        "environment" : "",
+        "object" : "columbus_temp_data",
+        "preview" : 0,
+        "totalObservations" : 271,
+        "variables" : 4
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_dataframe"
+}
