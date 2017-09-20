@@ -12,15 +12,15 @@
     "path" : null,
     "project_path" : null,
     "properties" : {
-        "cacheKey" : "36753841",
+        "cacheKey" : "18D7F575",
         "caption" : "columbus_temp_data",
-        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=columbus_temp_data&cache_key=36753841",
-        "displayedObservations" : 271,
+        "contentUrl" : "grid_resource/gridviewer.html?env=&obj=columbus_temp_data&cache_key=18D7F575",
+        "displayedObservations" : "271",
         "environment" : "",
         "object" : "columbus_temp_data",
-        "preview" : 0,
-        "totalObservations" : 271,
-        "variables" : 4
+        "preview" : "0",
+        "totalObservations" : "271",
+        "variables" : "4"
     },
     "relative_order" : 1,
     "source_on_save" : false,
