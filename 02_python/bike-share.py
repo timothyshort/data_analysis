@@ -4,6 +4,10 @@ from datetime import datetime # operations to parse dates
 from pprint import pprint # use to print data structures like dictionaries in
                           # a nicer way than the base print function.
 
+'''
+DATA COLLECTION & WRANGLING
+'''
+
 def print_first_point(filename):
     """
     This function prints and returns the first data point (second row) from
@@ -202,3 +206,167 @@ city_info = {'Washington': {'in_file': './data/Washington-CapitalBikeshare-2016.
 for city, filenames in city_info.items():
 	condense_data(filenames['in_file'], filenames['out_file'], city)
 	print_first_point(filenames['out_file'])
+
+
+
+'''
+EXPLORATORY DATA ANALYSIS
+'''
+
+
+def number_of_trips(filename):
+    """
+    This function reads in a file with trip data and reports the number of
+    trips made by subscribers, customers, and total overall.
+    """
+	with open(filename, 'r') as f_in:
+        # set up csv reader object
+		reader = csv.DictReader(f_in)
+        
+        # initialize count variables
+		n_subscribers = 0
+		n_customers = 0
+        
+        #duration variables
+		total_duration = 0
+		d_over_thirty = 30
+        
+        #duration variables by customer
+		d_subscriber = 0
+		d_customer = 0
+        
+        # tally up ride types
+		for row in reader:
+		if row['user_type'] == 'Subscriber':
+				n_subscribers += 1
+				d_subscriber += float(row['duration'])
+			else:
+				n_customers += 1
+				d_customer += float(row['duration'])
+            
+			total_duration += float(row['duration'])
+			if float(row['duration']) >= 30:
+				d_over_thirty += 1
+        
+        # compute total number of rides
+		n_total = n_subscribers + n_customers
+        
+        # return tallies as a tuple
+		return(n_subscribers, n_customers, n_total,
+			total_duration, d_over_thirty,
+			d_subscriber, d_customer, )
+
+## Modify this and the previous cell to answer Question 4a. Remember to run ##
+## the function on the cleaned data files you created from Question 3.      ##
+
+data_file_chicago = './data/Chicago-2016-Summary.csv'
+data_file_nyc = './data/NYC-2016-Summary.csv'
+data_file_washington = './data/Washington-2016-Summary.csv'
+
+chicago = number_of_trips(data_file_chicago)
+nyc = (number_of_trips(data_file_nyc))
+washington = (number_of_trips(data_file_washington))
+
+print("CHICAGO")
+print(" Subscribers: {}".format(chicago[0]))
+print(" Customers: {}".format(chicago[1]))
+print(" Total: {}".format(chicago[2]))
+
+print("NYC")
+print(" Subscribers: {}".format(nyc[0]))
+print(" Customers: {}".format(nyc[1]))
+print(" Total: {}".format(nyc[2]))
+
+print("WASHINGTON")
+print(" Subscribers: {}".format(washington[0]))
+print(" Customers: {}".format(washington[1]))
+print(" Total: {}".format(washington[2]))
+
+#Define sets
+most_trips = max(chicago[2], nyc[2], washington[2])
+most_subscribers = max(chicago[0]/chicago[2], nyc[0]/nyc[2], washington[0]/washington[2])
+most_short_term = max(chicago[1]/chicago[2], nyc[1]/nyc[2], washington[1]/washington[2])
+
+#Find city with most trips
+if (most_trips == chicago[2]):
+	city_most_trips = "Chicago", chicago[2]
+elif (most_trips == nyc[2]):
+	city_most_trips = "NYC", nyc[2]
+elif (most_trips == washigton[2]):
+	city_most_trips = "Washington", washington[2]
+    
+#Find cith with highest proportion of subscribers
+if (most_subscribers == chicago[0]/chicago[2]):
+	city_most_subscribers = "Chicago", chicago[0]/chicago[2]
+elif (most_subscribers == nyc[0]/nyc[2]):
+	city_most_subscribers = "NYC", nyc[0]/nyc[2]
+elif (most_subscribers == washington[0]/washington[2]):
+	city_most_subscribers = "Washington", washington[0]/washington[2]
+
+#Find cith with highest proportion of short-term customers
+if (most_short_term == chicago[1]/chicago[2]):
+	city_most_short_term = "Chicago", chicago[1]/chicago[2]
+elif (most_short_term == nyc[1]/nyc[2]):
+	city_most_short_term = "NYC", nyc[1]/nyc[2]
+elif (most_short_term == washington[1]/washington[2]):
+	city_most_short_term = "Washington", washington[1]/washington[2]
+
+print("\nSTATISTICAL ANALYSIS")
+print(" City with most trips: {} | {} trips".format(
+	city_most_trips[0], city_most_trips[1]))
+print(" City with highest proportion of subscribers: {} | {}".format(
+	city_most_subscribers[0], city_most_subscribers[1]))
+print(" City with highest proportion of short-term customers: {} | {}".format(
+	city_most_short_term[0], city_most_short_term[1]))
+
+
+## Use this and additional cells to answer Question 4b.                 ##
+##                                                                      ##
+## HINT: The csv module reads in all of the data as strings, including  ##
+## numeric values. You will need a function to convert the strings      ##
+## into an appropriate numeric type before you aggregate data.          ##
+## TIP: For the Bay Area example, the average trip length is 14 minutes ##
+## and 3.5% of trips are longer than 30 minutes.                        ##
+
+avg_duration_chicago = chicago[3] / chicago[2]
+durations_over_thirty_proportion_chicago = chicago[4] / chicago[2]
+
+avg_duration_nyc = nyc[3] / nyc[2]
+durations_over_thirty_proportion_nyc = nyc[4] / nyc[2]
+
+avg_duration_washington = washington[3] / washington[2]
+durations_over_thirty_proportion_washington = washington[4] / washington[2]
+
+print("CHICAGO Ride Duration:")
+print(" Average Duration: {} mins".format(avg_duration_chicago))
+print(" Proportion of rides longer than 30 minutes: {}".format(
+    durations_over_thirty_proportion_chicago))
+
+print("NYC Ride Duration:")
+print(" Average Duration: {} mins".format(avg_duration_nyc))
+print(" Proportion of rides longer than 30 minutes: {}".format(
+    durations_over_thirty_proportion_nyc))
+
+print("WASHINGTON Ride Duration:")
+print(" Average Duration: {} mins".format(avg_duration_washington))
+print(" Proportion of rides longer than 30 minutes: {}".format(
+    durations_over_thirty_proportion_washington))
+
+## Use this and additional cells to answer Question 4c. If you have    ##
+## not done so yet, consider revising some of your previous code to    ##
+## make use of functions for reusability.                              ##
+##                                                                     ##
+## TIP: For the Bay Area example data, you should find the average     ##
+## Subscriber trip duration to be 9.5 minutes and the average Customer ##
+## trip duration to be 54.6 minutes. Do the other cities have this     ##
+## level of difference?                                                ##
+
+print("CHICAGO Average Duration by Customer")
+print(" Subscribers: {} mins".format(chicago[5] / chicago[0]))
+print(" Customer: {} mins".format(chicago[6] / chicago[0]))
+print("NYC Average Duration by Customer")
+print(" Subscribers: {} mins".format(nyc[5] / nyc[0]))
+print(" Customer: {} mins".format(nyc[6] / nyc[0]))
+print("WASHINGTON Average Duration by Customer")
+print(" Subscribers: {} mins".format(washington[5] / washington[0]))
+print(" Customer: {} mins".format(washington[6] / washington[0]))
