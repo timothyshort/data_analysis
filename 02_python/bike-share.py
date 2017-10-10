@@ -126,14 +126,18 @@ def type_of_user(datum, city):
     and NYC. 
     """
     
-	if (city == "Washington"):
-		user_type = datum['Member Type']
-	elif (city == "Chicago"):
-		user_type = datum['usertype']
-	elif (city == "NYC"):
-		user_type = datum['usertype']
+    if (city == "Washington"):
+        wash_user_type = datum['Member Type']
+        if wash_user_type == "Registered":
+            user_type = "Subscriber"
+        elif wash_user_type == "Casual":
+            user_type = "Customer"
+    elif (city == "Chicago"):
+        user_type = datum['usertype']
+    elif (city == "NYC"):
+        user_type = datum['usertype']
     
-	return user_type
+    return user_type
 
 
 # Some tests to check that your code works. There should be no output if all of
