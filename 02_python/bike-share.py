@@ -363,10 +363,87 @@ print(" Proportion of rides longer than 30 minutes: {}".format(
 
 print("CHICAGO Average Duration by Customer")
 print(" Subscribers: {} mins".format(chicago[5] / chicago[0]))
-print(" Customer: {} mins".format(chicago[6] / chicago[0]))
+print(" Customer: {} mins".format(chicago[6] / chicago[1]))
 print("NYC Average Duration by Customer")
 print(" Subscribers: {} mins".format(nyc[5] / nyc[0]))
-print(" Customer: {} mins".format(nyc[6] / nyc[0]))
+print(" Customer: {} mins".format(nyc[6] / nyc[1]))
 print("WASHINGTON Average Duration by Customer")
 print(" Subscribers: {} mins".format(washington[5] / washington[0]))
-print(" Customer: {} mins".format(washington[6] / washington[0]))
+print(" Customer: {} mins".format(washington[6] / washington[1]))
+
+
+'''
+VISUALIZATIONS
+'''
+
+# load library
+import matplotlib.pyplot as plt
+
+# this is a 'magic word' that allows for plots to be displayed
+# inline with the notebook. If you want to know more, see:
+# http://ipython.readthedocs.io/en/stable/interactive/magics.html
+%matplotlib inline 
+
+# example histogram, data taken from bay area sample
+data = [ 7.65,  8.92,  7.42,  5.50, 16.17,  4.20,  8.98,  9.62, 11.48, 14.33,
+        19.02, 21.53,  3.90,  7.97,  2.62,  2.67,  3.08, 14.40, 12.90,  7.83,
+        25.12,  8.30,  4.93, 12.43, 10.60,  6.17, 10.88,  4.78, 15.15,  3.53,
+         9.43, 13.32, 11.72,  9.85,  5.22, 15.10,  3.95,  3.17,  8.78,  1.88,
+         4.55, 12.68, 12.38,  9.78,  7.63,  6.45, 17.38, 11.90, 11.52,  8.63,]
+plt.hist(data)
+plt.title('Distribution of Trip Durations')
+plt.xlabel('Duration (m)')
+plt.show()
+
+
+def find_durations(filename):
+    """
+    This function reads in a file with trip data and returns
+    the durations as a list. Enhanced to include separate lists
+    for Subscribers and Customers.
+    """
+    with open(filename, 'r') as f_in:
+        # set up csv reader object
+        reader = csv.DictReader(f_in)
+        
+        # initialize duration variables
+        durations = []
+        d_subscribers = []
+        d_customers = []
+        
+        # tally up ride types
+        for row in reader:           
+            durations.append(float(row['duration']))
+            if row['user_type'] == 'Subscriber':
+                d_subscribers.append(float(row['duration']))
+            else:
+                d_customers.append(float(row['duration']))
+        
+        # return duration as list
+        return(durations, d_subscribers, d_customers)
+
+
+## Read the data and place into list
+
+durations_chicago = find_durations(data_file_chicago)
+
+## Use this and additional cells to collect all of the trip times as a list ##
+## and then use pyplot functions to generate a histogram of trip times.     ##
+
+plt.hist(durations_chicago[0])
+plt.title('Distribution of Trip Durations for Chicago')
+plt.xlabel('Duration (m)')
+plt.show()
+
+
+## Use this and additional cells to answer Question 5. ##
+
+plt.hist(durations_chicago[1], bins=15, range=[0,75])
+plt.title('Distribution of Trip Durations for Chicago Subscribers')
+plt.xlabel('Duration (m)')
+plt.show()
+
+plt.hist(durations_chicago[2], bins=15, range=[0,75])
+plt.title('Distribution of Trip Durations for Chicago Customers')
+plt.xlabel('Duration (m)')
+plt.show()
