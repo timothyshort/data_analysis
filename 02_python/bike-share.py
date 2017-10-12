@@ -447,3 +447,88 @@ plt.hist(durations_chicago[2], bins=15, range=[0,75])
 plt.title('Distribution of Trip Durations for Chicago Customers')
 plt.xlabel('Duration (m)')
 plt.show()
+
+
+'''
+PERFORMING OWN ANALYSIS
+'''
+
+def additional_data(filename):
+    """
+    This function reads in a file with trip data and returns
+    the start times as a list
+    """
+    with open(filename, 'r') as f_in:
+        # set up csv reader object
+        reader = csv.DictReader(f_in)
+        
+        # initialize variables
+        trips_months_subscribers = []
+        trips_months_customers = []
+        trips_days_customers = []
+        trips_months = []
+        trips_days = []
+        trips_hours = []
+        
+        # read data
+        for row in reader:           
+            trips_months.append(float(row['month']))
+            
+            #add month to list for subscribers
+            if (row['user_type'] == 'Subscriber'):
+                trips_months_subscribers.append(float(row['month']))
+            
+            #add month to list of non-subscribers
+            else:
+                trips_months_customers.append(float(row['month']))
+
+                #add the days to list during peak months
+                if (4 <= float(row['month']) <= 10):
+                    trips_days_customers.append(row['day_of_week'])            
+            
+            #add days and time to list of off-peak hours
+            if (6 <= float(row['month']) <= 9):
+                trips_days.append(row['day_of_week'])
+                trips_hours.append(float(row['hour']))       
+        
+        # return lists
+        return(trips_months_subscribers, trips_months_customers, trips_days_customers,
+               trips_months, trips_days, trips_hours)
+
+#Grab data from the file
+chicago_additional_data = additional_data(data_file_chicago)
+
+#Visualization for Activity of Subscribers by Month
+#When to advertise new subscriber campaign
+plt.hist(chicago_additional_data[0])
+plt.title("Distribution of Trips by Month")
+plt.xlabel("Month")
+plt.show()
+
+#Visualizations for Trips by Days of Week for non-subscribers
+#When to advertise local bike sharing
+plt.hist(chicago_additional_data[1], bins=12)
+plt.title("Distribution of Trips by Month for Non-Subscribers")
+plt.xlabel("Month")
+plt.show()
+
+plt.hist(chicago_additional_data[2], bins=7)
+plt.title("Distribution of Trips by Day for Non-Subscribers")
+plt.xlabel("Day")
+plt.show()
+
+#When to perform bike maintenance and improvements
+plt.hist(chicago_additional_data[3], bins=12)
+plt.title("Distribution of All Trips by Month")
+plt.xlabel("Month")
+plt.show()
+
+plt.hist(chicago_additional_data[4], bins=7)
+plt.title("Distribution of All Trips by Day During Peak Months")
+plt.xlabel("Days")
+plt.show()
+
+plt.hist(chicago_additional_data[5], bins=24)
+plt.title("Distribution of All Trips by Hours During Peak Months & Days")
+plt.xlabel("Hours")
+plt.show()
