@@ -1,4 +1,4 @@
-#3
+#3 | LEFT, RIGHT
 
 #In the accounts table, there is a column holding the website for each company. The last three digits specify what type of web address they are using. A list of extensions (and pricing) is provided here. Pull these extensions and provide how many of each website type exist in the accounts table.
 SELECT DISTINCT RIGHT(website,3) as extension
@@ -35,7 +35,7 @@ FROM
 FROM accounts) t1
 
 
-#6
+#6 | POSITION
 
 #Use the accounts table to create a first and last name column that hold the first and last names for the primary_poc. 
 SELECT primary_poc,
@@ -51,7 +51,7 @@ SELECT name,
 FROM sales_reps
 
 
-#9
+#9 | CONCATENATION
 
 #Each company in the accounts table wants to create an email address for each primary_poc. The email address should be the first name of the primary_poc . last name primary_poc @ company name .com.
 SELECT CONCAT(
@@ -63,3 +63,10 @@ SELECT CONCAT(
   '.com')
   as email
 FROM accounts
+
+#12 | CAST
+
+SELECT date as date,
+ (SUBSTR(date, 7,4) || '-' || LEFT(date, 2) || '-' || SUBSTR(date,4,2))::date as cleaned_date
+FROM sf_crime_data
+LIMIT 10
