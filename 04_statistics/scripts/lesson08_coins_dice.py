@@ -25,3 +25,10 @@ print('Probably of rolling doubles')
 dice1 = np.random.randint(6, size = trials)
 dice2 = np.random.randint(6, size = trials)
 print((np.sum(dice1 == dice2))/len(dice1))
+
+#Using numpy binomial
+flips = 10
+p_head = .5
+tests = 100
+coin_flips = np.random.binomial(flips, p_head, tests)
+plt.hist(coin_flips)
