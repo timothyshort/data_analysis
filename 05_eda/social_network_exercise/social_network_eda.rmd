@@ -14,7 +14,7 @@ names(fb_users)
 ### Histogram of Users' Birthdays
 
 ```{r Histogram of Users\' Birthdays}
-install.packages('ggplot2')
+#install.packages('ggplot2')
 library(ggplot2)
 ggplot(aes(x = fb_users$dob_day), data = fb_users) + geom_histogram(binwidth=1) + scale_x_continuous(breaks=1:31)
 ```
@@ -94,23 +94,28 @@ ggplot(aes(x=fb_users$age), data=fb_users) +
   scale_x_continuous(breaks=seq(0,113,5))
 ```
 
-#### What do you notice?
-Response:
-
-***
-
-### The Spread of Memes
-Notes:
-
-***
-
-### Lada's Money Bag Meme
-Notes:
-
 ***
 
 ### Transforming Data
-Notes:
+```{r}
+summary(fb_users$friend_count)
+summary(log10(fb_users$friend_count + 1)) #add 1 to avoid log(0)=infinity
+summary(sqrt(fb_users$friend_count))
+```
+
+### Graph Results
+```{r}
+#plot historgrams on one plot
+#install.packages("gridExtra")
+library(gridExtra)
+
+p1 = ggplot(aes(x=friend_count), data=fb_users) + geom_histogram()
+p2 = p1 + scale_x_log10()
+p3 = p1 + scale_x_sqrt()
+
+grid.arrange(p1, p2, p3)
+```
+
 
 ***
 
@@ -118,7 +123,11 @@ Notes:
 Notes:
 
 ```{r Add a Scaling Layer}
+scale1 = qplot(x=log10(fb_users$friend_count), data=fb_users)
+scale2 = ggplot(aes(x=fb_users$friend_count), data=fb_users) +
+  geom_histogram() + scale_x_log10()
 
+grid.arrange(scale1, scale2, ncol=2)
 ```
 
 ***
@@ -127,7 +136,21 @@ Notes:
 ### Frequency Polygons
 
 ```{r Frequency Polygons}
+p_friends1 = ggplot(aes(x=friend_count, y=..density..), data=subset(fb_users, !is.na(gender))) +
+  geom_freqpoly(aes(color=gender), binwidth=20) +
+  scale_x_continuous(limits=c(0,1000))
 
+p_friends2 = ggplot(aes(x=friend_count), data=subset(fb_users, !is.na(gender))) +
+  geom_freqpoly(aes(color=gender)) +
+  scale_x_continuous(limits=c(0,1000)) +
+  scale_x_log10()
+
+p_friends3 = ggplot(aes(x=friend_count, y=..density..), data=subset(fb_users, !is.na(gender))) +
+  geom_freqpoly(aes(color=gender)) +
+  scale_x_continuous(limits=c(0,1000)) +
+  scale_x_log10()
+
+grid.arrange(p_friends1, p_friends2, p_friends3)
 ```
 
 ***
@@ -136,40 +159,39 @@ Notes:
 Notes:
 
 ```{r Likes on the Web}
+ggplot(aes(x=www_likes), data=subset(fb_users, !is.na(gender))) +
+  geom_freqpoly(aes(color=gender)) +
+  scale_x_log10()
 
+by(fb_users$www_likes, fb_users$gender, sum)
 ```
 
 
 ***
 
 ### Box Plots
-Notes:
-
-```{r Box Plots}
-
-```
-
-#### Adjust the code to focus on users who have friend counts between 0 and 1000.
-
-```{r}
-
-```
-
-***
 
 ### Box Plots, Quartiles, and Friendships
 Notes:
 
 ```{r Box Plots, Quartiles, and Friendships}
+ggplot(aes(x=gender, y=friend_count), data=subset(fb_users, !is.na(gender))) +
+  geom_boxplot() +
+  coord_cartesian(ylim=c(0,500))
 
+by(fb_users$friend_count, fb_users$gender, summary)
 ```
 
 #### On average, who initiated more friendships in our sample: men or women?
 Response:
-#### Write about some ways that you can verify your answer.
-Response:
-```{r Friend Requests by Gender}
 
+```{r Friend Requests by Gender}
+names(fb_users)
+by(fb_users$friendships_initiated, fb_users$gender, summary)
+
+ggplot(aes(x=gender, y=friendships_initiated), data=subset(fb_users, !is.na(gender))) +
+  geom_boxplot() +
+  coord_cartesian(ylim=c(0,150))
 ```
 
 Response:
@@ -180,17 +202,7 @@ Response:
 Notes:
 
 ```{r Getting Logical}
-
+summary(fb_users$mobile_likes > 0)
+mobile_check_in = ifelse(fb_users$mobile_likes > 0, 1, 0)
+summary(mobile_check_in)['Mean']
 ```
-
-Response:
-
-***
-
-### Analyzing One Variable
-Reflection:
-
-***
-
-Click **KnitHTML** to see all of your hard work and to have an html
-page of this lesson, your answers, and your notes!
