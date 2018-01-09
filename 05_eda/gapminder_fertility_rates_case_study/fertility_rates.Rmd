@@ -1,0 +1,71 @@
+---
+title: "Fertility Rates"
+output: html_notebook
+source: "GapMinder"
+---
+
+### Load libraries and dataset
+```{r}
+library(ggplot2)
+df = read.csv('data/fertility_rates.csv', header=T)
+head(df)
+```
+
+### Clean headers
+```{r}
+#colnames(df)[0:-1] = substring(names(df[0:-1]),2,5)
+colnames(df)[1] = "Country"
+names(df)[1:10]
+```
+
+### Initial Investigations
+```{r}
+data_us = subset(df, df$Country == "United States")[,-1]
+data_non_us = subset(df, df$Country != "United States")[,-1]
+```
+
+#Visualizations
+```{r}
+df_means = colMeans(df[,-1], na.rm = TRUE)
+plot(x=df_means) +
+  axis(1, at=1:216, labels=c(1800:2015)) +
+  title('Average Fertility Rate Across the World Since 1800')
+ggsave('visualizations/FertilityRate_World.png')
+
+df_means_us = colMeans(data_us)
+plot(x=df_means_us) +
+  axis(1, at=1:216, labels=c(1800:2015)) +
+  title('Average Fertility Rate Across in the US Since 1800')
+ggsave('visualizations/FertilityRate_US.png')
+
+plot(x=df_means_us - df_means,
+     main='Fertility Rate US vs World Since 1800',
+     xlab='Year', ylab='Difference in Fertility Rate') +
+  axis(1, at=1:216, labels=c(1800:2015))
+ggsave('visualizations/FertilityRate_USvWorld.png')
+```
+
+
+```{r}
+ggplot(aes(x=X1800), data=na.omit(df)) + geom_histogram() +
+  xlab('Fertility Rate') + ylab('Number of Countries') +
+  scale_x_continuous(limits=c(1,8), breaks=seq(1,8,.5)) +
+  ggtitle("Distribution of Countries' Fertility Rate in 1800")
+ggsave('visualizations/Dist_FertilityRate_1800.png')
+
+ggplot(aes(x=X2015), data=na.omit(df)) + geom_histogram() +
+  xlab('Fertility Rate') + ylab('Number of Countries') +
+  scale_x_continuous(limits=c(1,8), breaks=seq(1,8,.5)) +
+  ggtitle("Distribution of Countries' Fertility Rate in 2015")
+ggsave('visualizations/Dist_FertilityRate_2015.png')
+```
+
+#Investigate micro trend
+```{r}
+growth_since = which(df$X2015 > df$X1950, arr.ind = FALSE, useNames = TRUE)
+print("These countries have increased fertility rates since 1950")
+for (i in 1:length(growth_since)) {
+  print(df[growth_since[i],1])
+}
+```
+
