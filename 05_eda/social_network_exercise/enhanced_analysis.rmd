@@ -1,0 +1,266 @@
+### Investigating Social Network Statistics
+#### Muti-Variable Analysis and Plotting
+
+
+```{r Scatterplots}
+library(ggplot2)
+df = read.csv('pseudo_facebook.tsv', sep='\t')
+
+head(df)
+```
+
+#### Initial Plotting Investigations
+```{r}
+ggplot(aes(x=age, y=friend_count), data=df) +
+  geom_point() +
+  ggtitle('Friend Count by Age')
+ggsave('visualizations/FriendsbyAge.png')
+```
+
+
+### Overplotting
+Notes:
+
+```{r Overplotting}
+ggplot(aes(x=age, y=friend_count), data=df) +
+  geom_jitter(alpha = .05) + xlim(13,90) +
+  ggtitle('Friend Count by Age')
+ggsave('visualizations/FriendsbyAge-Enhanced.png')
+```
+
+### Coord_trans()
+Notes:
+
+```{r Coord_trans()}
+ggplot(aes(x=age, y=friend_count), data=df) +
+  geom_jitter(alpha = .05) +
+  scale_y_sqrt() +
+  #geom_point(alpha=.05, position = position_jitter(h=0))
+  #coord_trans(y='sqrt') +
+  xlim(13,90) +
+  ggtitle('Friend Count by Age')
+ggsave('visualizations/FriendsbyAge-Scaled.png')
+```
+
+```{r Investigate Friendships Initiated by Age}
+#names(df)
+ggplot(aes(x=age, y=friendships_initiated), data=na.omit(df)) +
+  geom_jitter(alpha=.05) +
+  scale_y_sqrt() +
+  xlim(13,90) +
+  facet_wrap(~gender) +
+  ggtitle('Friendships by Age from Gender')
+ggsave('visualizations/FriendshipsbyAge_Gender.png')
+```
+
+
+### Conditional Means
+Notes:
+
+```{r Conditional Means}
+#install.packages('dplyr')
+library(dplyr)
+```
+
+```{r}
+#Create dataframe by age group
+age_groups = group_by(df, age)
+age_groups
+
+#create summary dataframe
+df.fc_by_age = summarise(age_groups,
+                         friend_count_mean=mean(friend_count),
+                         friend_count_med=median(friend_count),
+                         n=n())
+head(df.fc_by_age)
+```
+
+
+Create your plot!
+
+```{r Conditional Means Plot}
+ggplot(aes(x=age, y=friend_count_mean), data=df.fc_by_age) +
+  geom_line() +
+  ggtitle('Mean Friend Count by Age')
+ggsave('visualizations/MeanFriendsbyAge.png')
+```
+
+***
+
+### Overlaying Summaries with Raw Data
+Notes:
+
+```{r Overlaying Summaries with Raw Data}
+ggplot(aes(x=age, y=friendships_initiated), data=na.omit(df)) +
+  geom_jitter(alpha=.05, color='gray') +
+  coord_cartesian(xlim=c(13,90), ylim=c(0,1000)) +
+  geom_line(stat='summary', fun.y = mean) +
+  geom_line(stat='summary', fun.y = quantile, fun.args=(list(probs=.5)), color='red') +
+  geom_line(stat='summary', fun.y = quantile, fun.args=(list(probs=.9)), linetype=2, size=.5) +
+  geom_line(stat='summary', fun.y = quantile, fun.args=(list(probs=.1)), linetype=2, size=.5) +
+  facet_wrap(~gender) +
+  ggtitle('Friendships Initiated by Age by Gender with Statistic Overlays')
+ggsave('visualizations/FriendshipsbyAgeGender_Stats.png')
+```
+
+***
+
+### Correlation
+Notes:
+
+```{r Correlation}
+?cor.test
+cor.test(df$age, df$friend_count, method=c('pearson'))
+```
+
+Look up the documentation for the cor.test function.
+
+What's the correlation between age and friend count? Round to three decimal places.
+Response:
+
+***
+
+### Correlation on Subsets
+Notes:
+
+```{r Correlation on Subsets}
+with(subset(df,age<=70), cor.test(age, friend_count))
+```
+
+***
+
+### Correlation Methods
+Notes:
+
+***
+
+## Create Scatterplots
+Notes:
+
+```{r}
+
+```
+
+***
+
+### Strong Correlations
+Notes:
+
+```{r Strong Correlations}
+
+```
+
+What's the correlation betwen the two variables? Include the top 5% of values for the variable in the calculation and round to 3 decimal places.
+
+```{r Correlation Calcuation}
+
+```
+
+Response:
+
+***
+
+### Moira on Correlation
+Notes:
+
+***
+
+### More Caution with Correlation
+Notes:
+
+```{r More Caution With Correlation}
+install.packages('alr3')
+library(alr3)
+```
+
+Create your plot!
+
+```{r Temp vs Month}
+
+```
+
+***
+
+### Noisy Scatterplots
+a. Take a guess for the correlation coefficient for the scatterplot.
+
+b. What is the actual correlation of the two variables?
+(Round to the thousandths place)
+
+```{r Noisy Scatterplots}
+
+```
+
+***
+
+### Making Sense of Data
+Notes:
+
+```{r Making Sense of Data}
+
+```
+
+***
+
+### A New Perspective
+
+What do you notice?
+Response:
+
+Watch the solution video and check out the Instructor Notes!
+Notes:
+
+***
+
+### Understanding Noise: Age to Age Months
+Notes:
+
+```{r Understanding Noise: Age to Age Months}
+
+```
+
+***
+
+### Age with Months Means
+
+```{r Age with Months Means}
+
+```
+
+Programming Assignment
+```{r Programming Assignment}
+
+```
+
+***
+
+### Noise in Conditional Means
+
+```{r Noise in Conditional Means}
+
+```
+
+***
+
+### Smoothing Conditional Means
+Notes:
+
+```{r Smoothing Conditional Means}
+
+```
+
+***
+
+### Which Plot to Choose?
+Notes:
+
+***
+
+### Analyzing Two Variables
+Reflection:
+
+***
+
+Click **KnitHTML** to see all of your hard work and to have an html
+page of this lesson, your answers, and your notes!
+
