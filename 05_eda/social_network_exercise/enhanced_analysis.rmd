@@ -1,3 +1,8 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 ### Investigating Social Network Statistics
 #### Muti-Variable Analysis and Plotting
 
@@ -10,7 +15,7 @@ head(df)
 ```
 
 #### Initial Plotting Investigations
-```{r}
+```{r Initial investigations}
 ggplot(aes(x=age, y=friend_count), data=df) +
   geom_point() +
   ggtitle('Friend Count by Age')
@@ -62,7 +67,7 @@ Notes:
 library(dplyr)
 ```
 
-```{r}
+```{r Grouping Dataframes with dplyr}
 #Create dataframe by age group
 age_groups = group_by(df, age)
 age_groups
@@ -127,88 +132,59 @@ Notes:
 with(subset(df,age<=70), cor.test(age, friend_count))
 ```
 
-***
-
-### Correlation Methods
-Notes:
-
-***
-
 ## Create Scatterplots
 Notes:
 
-```{r}
-
-```
-
-***
-
-### Strong Correlations
-Notes:
-
-```{r Strong Correlations}
-
+```{r Likes Received}
+sum(df$www_likes_received)
+sum(df$likes_received)
+ggplot(aes(x=www_likes_received, y=likes_received), data=df) +
+  geom_point(alpha=.05) +
+  xlim(c(0,quantile(df$www_likes_received,.95))) +
+  ylim(c(0,quantile(df$likes_received,.95))) +
+  xlab('Desktop Likes Received') +
+  ylab('All Likes Received') +
+  geom_smooth(method='lm', color='red') +
+  ggtitle('Desktop Likes vs Total Likes')
+ggsave('visualizations/DesktopLikes_Likes.png')
 ```
 
 What's the correlation betwen the two variables? Include the top 5% of values for the variable in the calculation and round to 3 decimal places.
 
 ```{r Correlation Calcuation}
-
+cor.test(df$www_likes_received, df$likes_received)
 ```
 
-Response:
-
-***
-
-### Moira on Correlation
-Notes:
-
-***
 
 ### More Caution with Correlation
 Notes:
 
 ```{r More Caution With Correlation}
-install.packages('alr3')
+#install.packages('alr3')
 library(alr3)
+data(Mitchell)
+?Mitchell
+names(Mitchell)
 ```
 
 Create your plot!
 
 ```{r Temp vs Month}
-
+ggplot(aes(x=Month, y=Temp), data=Mitchell) +
+  geom_point() +
+  scale_x_continuous(breaks=seq(0,204,12)) +
+  ggtitle('Temperature vs Month (Mitchell Data)')
 ```
 
 ***
 
 ### Noisy Scatterplots
-a. Take a guess for the correlation coefficient for the scatterplot.
-
-b. What is the actual correlation of the two variables?
+What is the actual correlation of the two variables?
 (Round to the thousandths place)
 
 ```{r Noisy Scatterplots}
-
+cor.test(Mitchell$Month, Mitchell$Temp)
 ```
-
-***
-
-### Making Sense of Data
-Notes:
-
-```{r Making Sense of Data}
-
-```
-
-***
-
-### A New Perspective
-
-What do you notice?
-Response:
-
-Watch the solution video and check out the Instructor Notes!
-Notes:
 
 ***
 
@@ -216,7 +192,9 @@ Notes:
 Notes:
 
 ```{r Understanding Noise: Age to Age Months}
-
+head(df.fc_by_age)
+df$age_with_month = df$age + (1-df$dob_month/12)
+head(df)
 ```
 
 ***
@@ -224,12 +202,16 @@ Notes:
 ### Age with Months Means
 
 ```{r Age with Months Means}
+#library(dplyr);
+age_month_group = group_by(df, age_with_month)
+head(age_month_group)
 
-```
+df.fc_by_age_month = summarise(age_month_group,
+                               friend_mean_count = mean(friend_count),
+                               friend_med_count = median(friend_count),
+                               n = n())
 
-Programming Assignment
-```{r Programming Assignment}
-
+df.fc_by_age_month
 ```
 
 ***
@@ -237,30 +219,17 @@ Programming Assignment
 ### Noise in Conditional Means
 
 ```{r Noise in Conditional Means}
+p11 = ggplot(aes(x=age_with_month, y=friend_mean_count), data=subset(df.fc_by_age_month, age_with_month<(71))) +
+  geom_line() + geom_smooth()
 
+p12 = ggplot(aes(x=age, y=friend_count), data=subset(df, age_with_month<(71))) +
+  geom_line(stat='summary', fun.y=mean) + geom_smooth()
+
+p13 = ggplot(aes(x=round(age/5)*5, y=friend_count), data=subset(df, age_with_month<(71))) +
+  geom_line(stat='summary', fun.y=mean)
+
+library(gridExtra)
+grid.arrange(p11, p12, p13)
+g = arrangeGrob(p11, p12, p13)
+ggsave('visualizations/FriendsbyAge_comps.png', g)
 ```
-
-***
-
-### Smoothing Conditional Means
-Notes:
-
-```{r Smoothing Conditional Means}
-
-```
-
-***
-
-### Which Plot to Choose?
-Notes:
-
-***
-
-### Analyzing Two Variables
-Reflection:
-
-***
-
-Click **KnitHTML** to see all of your hard work and to have an html
-page of this lesson, your answers, and your notes!
-
