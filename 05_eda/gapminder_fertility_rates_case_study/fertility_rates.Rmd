@@ -18,19 +18,21 @@ colnames(df)[1] = "Country"
 names(df)[1:10]
 ```
 
-### Initial Investigations
-```{r}
+```{r Initial Investigations}
 data_us = subset(df, df$Country == "United States")[,-1]
 data_non_us = subset(df, df$Country != "United States")[,-1]
 ```
 
-#Visualizations
-```{r}
+```{r Visualizations}
+yearMeans = colMeans(df[,-1], na.rm = TRUE)
 df_means = colMeans(df[,-1], na.rm = TRUE)
+qplot(x=names(df[,-1]), y=yearMeans, main = 'Average Fertility Rate Across the World Since 1800') +
+  axis(1, at=1:216, labels=c(1800:2015))
+
 plot(x=df_means) +
   axis(1, at=1:216, labels=c(1800:2015)) +
   title('Average Fertility Rate Across the World Since 1800')
-ggsave('visualizations/FertilityRate_World.png')
+#ggsave('visualizations/FertilityRate_World.png')
 
 df_means_us = colMeans(data_us)
 plot(x=df_means_us) +
@@ -60,12 +62,23 @@ ggplot(aes(x=X2015), data=na.omit(df)) + geom_histogram() +
 ggsave('visualizations/Dist_FertilityRate_2015.png')
 ```
 
-#Investigate micro trend
-```{r}
+```{r Investigate micro trend}
 growth_since = which(df$X2015 > df$X1950, arr.ind = FALSE, useNames = TRUE)
 print("These countries have increased fertility rates since 1950")
 for (i in 1:length(growth_since)) {
   print(df[growth_since[i],1])
 }
+```
+
+```{r Using dplyr and gridExtra}
+library(dplyr)
+library(gridExtra)
+```
+
+```{r Average by Country}
+countryMeans = rowMeans(df[,-1])
+qplot(x=countryMeans, main='Distribution of Country Mean Fertility Rates Since 1800',
+      xlab='Fertility Rate', ylab='Number of Countries')
+ggsave('visualizations/FertilityRate_byCountryDistribution.png')
 ```
 
