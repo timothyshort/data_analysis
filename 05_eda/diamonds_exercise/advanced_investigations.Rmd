@@ -1,0 +1,107 @@
+---
+title: 'Diamaonds: Two Variables'
+author: "Timothy Short"
+date: "1/15/2018"
+output: html_document
+---
+
+```{r Load diamonds dataframe}
+library(ggplot2)
+data(diamonds)
+?diamonds
+names(diamonds)
+head(diamonds)
+```
+
+# Your first task is to create a scatterplot of price vs x using the ggplot syntax.
+```{r Price v X Plot}
+ggplot(aes(x=x, y=price), data=diamonds) +
+  geom_point() +
+  ggtitle('Price vs X')
+ggsave('visualizations/Price_v_X.png')
+```
+
+```{r Correlations: X/Y/Z to Price}
+cor.test(diamonds$z, diamonds$price)
+```
+
+```{r Prive v Depth}
+ggplot(aes(x=depth, y=price), data=diamonds) +
+  geom_point(alpha=.1) +
+  scale_x_continuous(breaks=seq(0,80,2)) +
+  ggtitle('Price v Depth')
+ggsave('visualizations/Price_v_Depth.png')
+
+cor.test(diamonds$depth, diamonds$price)
+```
+
+```{r Price v Carat}
+ggplot(aes(x=carat, y=price), data=diamonds) +
+  geom_point() +
+  ylim(0,quantile(diamonds$price, .99)) +
+  xlim(0,quantile(diamonds$carat, .99)) +
+  ggtitle('Price v Carats Top 99%')
+ggsave('visualizations/Price_v_Carats.png')
+```
+
+```{r Price v Volume}
+diamonds$volume = with(diamonds, x*y*z)
+head(diamonds)
+
+ggplot(aes(x=volume, y=price), data=diamonds) + 
+  geom_point() +
+  ggtitle('Volume v Price')
+ggsave('visualizations/Price_v_Volume.png')
+```
+
+```{r Price v Volume Investigation}
+ggplot(aes(x=volume), data=diamonds) + geom_histogram() +
+  scale_x_continuous(limits=c(0,800))
+
+diamonds.price_vol = subset(diamonds, volume < 800 & volume > 0)
+cor.test(x=diamonds.price_vol$volume, y=diamonds.price_vol$price)
+
+ggplot(aes(x=volume, y=price), data=diamonds.price_vol) + 
+  geom_point(alpha=.1) +
+  geom_smooth() +
+  ggtitle('Volume v Price Model')
+ggsave('visualizations/Price_v_Volume_Model.png')
+```
+
+```{r Investigations by Clarity}
+library(dplyr)
+byClarity_group = group_by(diamonds, clarity)
+diamonds.byClarity = summarise(byClarity_group,
+                               mean_price = mean(price),
+                               median_price = median(price), 
+                               min_price = min(price),
+                               max_price = max(price), 
+                               n = n())
+diamonds.byClarity
+```
+
+```{r Investigations by Color}
+byColor_group = group_by(diamonds, color)
+diamonds.byColor = summarise(byColor_group,
+                             mean_price = mean(price),
+                             median_price = median(price), 
+                             min_price = min(price),
+                             max_price = max(price), 
+                             n = n())
+diamonds.byColor
+```
+
+```{r Clarity and Color Plots}
+library(gridExtra)
+p1 = ggplot(aes(x=color, y=mean_price), data=diamonds.byColor) +
+  geom_col() +
+  ggtitle('Mean Price by Color')
+
+p2 = ggplot(aes(x=clarity, y=mean_price), data=diamonds.byClarity) +
+  geom_col() +
+  ggtitle('Mean Price by Clarity')
+
+g = grid.arrange(p1, p2)
+ggsave('visualizations/MeanPrice_Color_Clarity.png', g)
+```
+
