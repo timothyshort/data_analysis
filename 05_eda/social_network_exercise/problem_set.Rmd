@@ -1,0 +1,45 @@
+---
+title: "Multi-Variable Problem Set"
+author: "Timothy Short"
+date: "1/22/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Many interesting variables are derived from two or more others. For example, we might wonder how much of a person's network on a service like Facebook the user actively initiated. Two users with the same degree (or number of friends) might be very different if one initiated most of those connections on the service, while the other initiated very few. So it could be useful to consider this proportion of existing friendships that the user initiated. This might be a good predictor of how active a user is compared with their peers, or other traits, such as personality (i.e., is this person an extrovert?).
+
+### Create a new variable called 'prop_initiated' in the Pseudo-Facebook data set. The variable should contain the proportion of friendships that the user initiated.
+
+```{r Proportion of friendships initiated}
+fb_users$prop_initiated = with(fb_users, friendships_initiated / friend_count)
+head(fb_users)
+summary(fb_users$prop_initiated)
+```
+
+### Create a line graph of the median proportion of friendships initiated ('prop_initiated') vs. tenure and color the line segment by year_joined.bucket.
+
+```{r Plot Proportion of Friendships Initiated}
+library(ggplot2)
+ggplot(aes(x=tenure, y=prop_initiated, color=year_joined.bucket), data=fb_users) +
+  geom_line(stat='summary', fun.y = mean) +
+  ggtitle('Proportion of Friendships Initiated by Tenure')
+ggsave('visualizations/ProportionFriendshipsInitiatedbyTenure.png')
+```
+
+```{r Plot Proportion of Friendships Initiated, Smoothed }
+library(ggplot2)
+ggplot(aes(x= tenure, y=prop_initiated), data=fb_users) +
+  geom_smooth(aes(color=year_joined.bucket)) +
+  xlab('Tenure (Days)') +
+  ylab('Proportion of Friendships Initiated') +
+  ggtitle('Proportion of Friendships Initiated by Tenure')
+ggsave('visualizations/ProportionFriendshipsInitiatedbyTenure-Smooth.png')
+```
+
+```{r}
+summary(filter(fb_users, year_joined.bucket == "(2012,2014]")$prop_initiated)['Mean']
+```
+
