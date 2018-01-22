@@ -1,0 +1,61 @@
+---
+title: "Diamonds Data Set"
+author: "Timothy Short"
+date: "1/22/2018"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r cars}
+library(ggplot2)
+data(diamonds)
+names(diamonds)
+head(diamonds)
+```
+
+### Create a histogram of diamond prices. Facet the histogram by diamond color and use cut to color the histogram bars.
+
+```{r Histogram: Prices by Color and Cut}
+ggplot(aes(x=price, fill=cut), data=diamonds) +
+  geom_histogram() +
+  scale_fill_brewer(palette='Greens') + scale_x_log10() +
+  facet_wrap(~color) +
+  ggtitle('Distribution of Prices by Color and Cut')
+ggsave('visualizations/PricesByColor_Cut.png')
+```
+
+### Create a scatterplot of diamond price vs. table and color the points by the cut of the diamond.
+
+```{r Scatterplot: Price by Table and Cut}
+ggplot(aes(x=table, y=price), data=diamonds) +
+  geom_point(aes(color=cut), alpha=.75) + scale_color_brewer(palette='Set1') +
+  ggtitle('Prices by Table and Cut')
+ggsave('visualizations/PricebyTableCut.png')
+```
+
+### Create a scatterplot of diamond price vs. volume (x * y * z) and color the points by the clarity of diamonds. Use scale on the y-axis to take the log10 of price. You should also omit the top 1% of diamond volumes from the plot.
+
+```{r Scatterplot: Price by Volume and Clarity}
+diamonds$volume = with(diamonds, x*y*z)
+ggplot(aes(x=volume, y=price), data=na.omit(subset(diamonds, volume < quantile(diamonds$volume, .99)))) +
+  geom_point(aes(color=clarity)) +
+  scale_y_log10() +
+  ggtitle('Price by Volume and Clarity')
+ggsave('visualizations/PricebyVolumeClarity.png')
+```
+
+### Create a scatter plot of the price/carat ratio of diamonds. The variable x should be assigned to cut. The points should be colored by diamond color, and the plot should be faceted by clarity.
+
+```{r Scatterplot: Price/Carat Ratio by Cut}
+ggplot(aes(x=cut, y=price/carat), data=diamonds) +
+  geom_jitter(aes(color=color), size=.25) +
+  scale_color_brewer(type='div') +
+  facet_wrap(~clarity) +
+  ggtitle('Price/Carat Ratio by Cut')
+ggsave('visualizations/PriceCaratRatiobyCut.png')
+```
+
