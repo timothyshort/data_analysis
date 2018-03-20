@@ -1,0 +1,244 @@
+Loan Data Case Study by Timothy Short
+========================================================
+
+```{r echo=FALSE, packages}
+library(ggplot2)
+library(plyr)
+```
+
+```{r echo=FALSE, Load_the_Data}
+df = read.csv('data/prosperLoanData.csv', header=T)
+head(df)
+names(df)
+```
+
+There are 113,937 observations with 81 variables to analyze. Variables include
+basic loan information and applicant information, to detailed description of
+the loan backer and financial institution information. Most variables are
+numerica with String variables as factor variables.
+
+We want to analyze the various Loan Status' and see which variables seem to
+impact and help identify trends among a borrower's loan. Below are
+
+```{r}
+print(summary(na.omit(df)))
+#Borrower Profile
+summary((df$CreditScoreRangeLower + df$CreditScoreRangeLower)/2)
+table(df$OpenCreditLines)
+summary(df$IncomeRange)
+summary(df$DebtToIncomeRatio)
+table(df$TotalInquiries)
+table(df$EmploymentStatus)
+table(df$IsBorrowerHomeowner)
+
+#Current Loan Data
+count(df$LoanStatus)
+summary(df$LoanCurrentDaysDelinquent)
+table(df$CreditGrade)
+summary(df$MonthlyLoanPayment)
+```
+
+Make preliminary changes to data set
+
+```{r}
+#Calculate the mean credit score (upper - lower)
+df$CreditScoreMean = (df$CreditScoreRangeUpper + df$CreditScoreRangeLower)/2
+```
+
+### Data Observations
+- EmploymentStatus: 2255 observations are EMPTY
+- CreditGrade: 84984 observations are EMPTY
+- TotalInquiries: extreme outliers of 377 and 379
+
+# Univariate Plots
+
+```{r echo=FALSE, Univariate_Plots: Loan Data}
+#Bar graph to show the count of each loan status
+ggplot(aes(x=LoanStatus), y=count(LoanStatus), data=df) +
+  geom_bar() + 
+  ggtitle('Counts of Loan Status') +
+  ggsave('visualizations/univariate-loandata/loanstatus.png')
+
+#Histogram to show the counts of days for loan deliquency
+ggplot(aes(x=LoanCurrentDaysDelinquent), data=subset(df,df$LoanCurrentDaysDelinquent>0)) +
+  geom_histogram(binwidth = 30) +
+  scale_x_continuous(breaks=seq(1,365*30,365), labels=c(0:29)) +
+  xlab('Year Delinquent') +
+  ggtitle('Distribution of Loan Delinquency in Years') +
+  ggsave('visualizations/univariate-loandata/daysdelinquent.png')
+
+#Bar grapch to show counts of different credit grades of the loan
+ggplot(aes(x=CreditGrade), y=count(CreditGrade), data=subset(df, df$CreditGrade!="")) +
+  geom_bar() + 
+  ggtitle('Distribution of Loan Credit Grades') +
+  ggsave('visualizations/univariate-loandata/creditgrade.png')
+
+#Boxplot to show distribution of monthly payments
+ggplot(data=df, aes(x="", y=MonthlyLoanPayment)) +
+  scale_y_continuous(limits=c(0,1500)) +
+  xlab("") +
+  geom_boxplot() +
+  ggtitle('Distribution of Monthly Payment') +
+  ggsave('visualizations/univariate-loandata/monthlypayment.png')
+```
+
+
+```{r echo=FALSE, Univariate_Plots: Borrower Profile}
+#Histogram to show total credit inquiries of each loan's borrower
+ggplot(aes(x=TotalInquiries), y=count(df$TotalInquiries), data=df) +
+  geom_histogram(binwidth = 1) +
+  scale_x_continuous(limits=c(-1,25)) +
+  ggtitle('Distribution of Total Credit Inquiries\nRange: 0 to 25') +
+  ggsave('visualizations/univariate-borrowerprofile/totalinquiries.png')
+
+#Histogram to show distribution of current open credit lines for each loan's borrower
+ggplot(data=df, aes(x=OpenCreditLines)) +
+  geom_histogram() +
+  ggtitle("Distribution of Borrower's Open Credit Lines") +
+  ggsave('visualizations/univariate-borrowerprofile/opencreditlines.png')
+
+#Bar graph to show distribution of borrower's income range
+ggplot(data=df, aes(x=IncomeRange)) +
+  geom_bar() +
+  ggtitle('Distribution of Borrowers Income') +
+  ggsave('visualizations/univariate-borrowerprofile/incomerange.png')
+
+#Histogram to show distribution of borrowers mean credit score
+ggplot(data=df, aes(x=CreditScoreMean)) +
+  xlim(450, 850) +
+  geom_histogram(binwidth=10) +
+  ggtitle('Distribution of Borrowers Mean Credit Score') +
+  ggsave('visualizations/univariate-borrowerprofile/creditscores.png')
+
+#Histogram of borrowers debt-to-income ratio
+ggplot(aes(x=DebtToIncomeRatio), data=df) +
+  xlim(0,1) +
+  geom_histogram() +
+  ggtitle('Distribution of Borrowers Debt to Income Ratio')
+  ggsave('visualizations/univariate-borrowerprofile/debtincomeratio.png')
+
+#Bar graph of borrowers employment status
+ggplot(aes(x=EmploymentStatus), y=count(EmploymentStatus), data=subset(df, df$EmploymentStatus!="")) +
+  geom_bar() +
+  ggtitle('Distribution of Employment Status') +
+  ggsave('visualizations/univariate-borrowerprofile/employmentstatus.png')
+
+#Bar graph of borrowers homeownersip
+ggplot(aes(x=IsBorrowerHomeowner), y=count(IsBorrowerHomeowner), data=df) +
+  geom_bar() +
+  ggtitle('Distribution of Homeowner Status') +
+  ggsave('visualizations/univariate-borrowerprofile/homeowner.png')
+```
+
+# Univariate Analysis
+
+I am interested in investigating any correlation to the loan status. I chose
+a handful of variables relative to the loan's financial information and a
+handful of variables relative to the borrower's profile.
+
+I created one new variable to analyze the borrowers credit score. The dataset
+included an upper and lower range of the credit score; I simplified this into
+one number - the mean credit score.
+
+There were some adjustments to the dataset, including empty values. There
+appears to be some obvious distributions that I would like to analyze.
+
+
+
+# Bivariate Plots Section
+
+> **Tip**: Based on what you saw in the univariate plots, what relationships
+between variables might be interesting to look at in this section? Don't limit
+yourself to relationships between a main output feature and one of the
+supporting variables. Try to look at relationships between supporting variables
+as well.
+
+```{r echo=FALSE, Bivariate_Plots}
+
+```
+
+# Bivariate Analysis
+
+> **Tip**: As before, summarize what you found in your bivariate explorations
+here. Use the questions below to guide your discussion.
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. How did the feature(s) of interest vary with other features in \
+the dataset?
+
+### Did you observe any interesting relationships between the other features \
+(not the main feature(s) of interest)?
+
+### What was the strongest relationship you found?
+
+
+# Multivariate Plots Section
+
+> **Tip**: Now it's time to put everything together. Based on what you found in
+the bivariate plots section, create a few multivariate plots to investigate
+more complex interactions between variables. Make sure that the plots that you
+create here are justified by the plots you explored in the previous section. If
+you plan on creating any mathematical models, this is the section where you
+will do that.
+
+```{r echo=FALSE, Multivariate_Plots}
+
+```
+
+# Multivariate Analysis
+
+### Talk about some of the relationships you observed in this part of the \
+investigation. Were there features that strengthened each other in terms of \
+looking at your feature(s) of interest?
+
+### Were there any interesting or surprising interactions between features?
+
+### OPTIONAL: Did you create any models with your dataset? Discuss the \
+strengths and limitations of your model.
+
+------
+
+# Final Plots and Summary
+
+> **Tip**: You've done a lot of exploration and have built up an understanding
+of the structure of and relationships between the variables in your dataset.
+Here, you will select three plots from all of your previous exploration to
+present here as a summary of some of your most interesting findings. Make sure
+that you have refined your selected plots for good titling, axis labels (with
+units), and good aesthetic choices (e.g. color, transparency). After each plot,
+make sure you justify why you chose each plot by describing what it shows.
+
+### Plot One
+```{r echo=FALSE, Plot_One}
+
+```
+
+### Description One
+
+
+### Plot Two
+```{r echo=FALSE, Plot_Two}
+
+```
+
+### Description Two
+
+
+### Plot Three
+```{r echo=FALSE, Plot_Three}
+
+```
+
+### Description Three
+
+------
+
+# Reflection
+
+> **Tip**: Here's the final step! Reflect on the exploration you performed and
+the insights you found. What were some of the struggles that you went through?
+What went well? What was surprising? Make sure you include an insight into
+future work that could be done with the dataset.
+
+> **Tip**: Don't forget to remove this, and the other **Tip** sections before
+saving your final work and knitting the final report!
