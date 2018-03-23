@@ -17,6 +17,10 @@ basic loan information and applicant information, to detailed description of
 the loan backer and financial institution information. Most variables are
 numerica with String variables as factor variables.
 
+There are many different case studies to analyze, from trends of lower income
+to upper income customers, to analyzing what products customers will seek
+to finance, to the credit worthiness of the borrower and / or the loan.
+
 We want to analyze the various Loan Status' and see which variables seem to
 impact and help identify trends among a borrower's loan. Below are
 
@@ -40,14 +44,25 @@ summary(df$MonthlyLoanPayment)
 
 Make preliminary changes to data set
 
-```{r}
+```{r InitializeVariables}
 #Calculate the mean credit score (upper - lower)
 df$CreditScoreMean = (df$CreditScoreRangeUpper + df$CreditScoreRangeLower)/2
+
+#Factor the credit grade
+df$CreditGrade = factor(df$CreditGrade, levels = c('NC', 'HR', 'E', 'D', 'C', 'B', 'A', 'AA'))
+
+#Factor income levels
+df$IncomeRange = factor(df$IncomeRange, levels = c('$0', '$1-24,999', '$25,000-49,999', '$50,000-74,999', '$75,000-99,999', '$100,000+',  'Not displayed', 'Not employed'))
+
+#Define variable analysis as array
+borrowerProfile = c( "CreditScoreMean" , "OpenCreditLines" , "IncomeRange" ,
+  "DebtToIncomeRatio" , "TotalInquiries" , "EmploymentStatus" , "IsBorrowerHomeowner" )
+loanData = c( "LoanStatus" , "LoanCurrentDaysDelinquent" , "CreditGrade" , "MonthlyLoanPayment")
 ```
 
 ### Data Observations
 - EmploymentStatus: 2255 observations are EMPTY
-- CreditGrade: 84984 observations are EMPTY
+- CreditGrade: 84984 observations are EMPTY or NC
 - TotalInquiries: extreme outliers of 377 and 379
 
 # Univariate Plots
@@ -80,6 +95,23 @@ ggplot(data=df, aes(x="", y=MonthlyLoanPayment)) +
   geom_boxplot() +
   ggtitle('Distribution of Monthly Payment') +
   ggsave('visualizations/univariate-loandata/monthlypayment.png')
+
+#Bar graph to show listing category
+listingNames = c("Debt Consolidation", "Home Improvement", "Business", "Personal Loan", "Student Use", "Auto", "Other", "Baby&Adoption", "Boat", "Cosmetic Procedure", "Engagement Ring", "Green Loans", "Household Expenses", "Large Purchases", "Medical/Dental", "Motorcycle", "RV", "Taxes", "Vacation", "Wedding Loans")
+table(df$ListingCategory..numeric.)
+ggplot(data=df, aes(x=ListingCategory..numeric.)) +
+  geom_histogram(bins=20, binwidth = .5) +
+  scale_x_continuous(limits = c(0,21), breaks=seq(1,20,1), labels = listingNames) +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=.95)) +
+  xlab('Listing Category') + 
+  ggtitle('Loan Listing Category') +
+  ggsave('visualizations/univariate-loandata/loanpurpose.png')
+
+#Loan Amount
+ggplot(df, aes(x=LoanOriginalAmount)) +
+  geom_histogram() +
+  ggtitle('Distribution of Loan Amounts') +
+  ggsave('visualizations/univariate-loandata/loanamount.png')
 ```
 
 
@@ -101,6 +133,7 @@ ggplot(data=df, aes(x=OpenCreditLines)) +
 ggplot(data=df, aes(x=IncomeRange)) +
   geom_bar() +
   ggtitle('Distribution of Borrowers Income') +
+  theme(axis.text.x = element_text(angle=45, vjust=.95, hjust=.95)) +
   ggsave('visualizations/univariate-borrowerprofile/incomerange.png')
 
 #Histogram to show distribution of borrowers mean credit score
@@ -143,24 +176,77 @@ one number - the mean credit score.
 There were some adjustments to the dataset, including empty values. There
 appears to be some obvious distributions that I would like to analyze.
 
-
+Going forward, I want to analyze loans that are in good condition (completed
+or current) and loans that are in bad condition (defaulted or charged off).
+From here, we can look for some important indicators to anticipate and
+predict the result of loans that are past due.
 
 # Bivariate Plots Section
 
-> **Tip**: Based on what you saw in the univariate plots, what relationships
-between variables might be interesting to look at in this section? Don't limit
-yourself to relationships between a main output feature and one of the
-supporting variables. Try to look at relationships between supporting variables
-as well.
-
 ```{r echo=FALSE, Bivariate_Plots}
+ggplot(data=df, aes(x=ListingCategory..numeric., y=LoanStatus)) +
+  geom_jitter(alpha=.1, size=.01, width=.3, height=.3) +
+  scale_x_continuous(limits = c(1,21), breaks=seq(1,20,1), labels = listingNames) +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=.95)) +
+  xlab('Loan Listing Type') +
+  ggtitle('Loan Status by Listing Category') + 
+  ggsave('visualizations/bivariate/loanstatus_loantype.png')
+
+ggplot(data=df, aes(x=ListingCategory..numeric., y=LoanOriginalAmount)) +
+  stat_summary(fun.y='median', geom='bar') +
+  scale_x_continuous(limits = c(0,21), breaks=seq(1,20,1), labels = listingNames) +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=.95)) +
+  xlab('Loan Listing Type') +
+  ylab('Median Original Loan Amount') +
+  ggtitle('Median Loan by Loan Type') +
+  ggsave('visualizations/bivariate/loanamount_loantype.png')
+
+ggplot(data=df, aes(y=ListingCategory..numeric., x=CreditScoreMean)) +
+  geom_jitter(alpha=.1, size=.1) +
+  scale_y_continuous(limits = c(1,21), breaks=seq(1,20,1), labels = listingNames) +
+  scale_x_continuous(limits = c(500, 850), breaks=seq(500,850,50)) +
+  theme(axis.text.y = element_text(hjust=.95)) +
+  ylab('Loan Listing Type') +
+  xlab('Mean Credit Score') +
+  ggtitle('Loan Category by Credit Score') +
+  ggsave('visualizations/bivariate/loantype_creditscore.png')
+
+ggplot(aes(x=CreditScoreMean, y=CreditGrade), data=subset(df, df$CreditGrade!="" & df$CreditGrade!='NC')) +
+  geom_jitter(alpha=.1, size=.1) +
+  xlim(400,900) +
+  ggtitle('Loands Credit Grade by Credit Score') +
+  ggsave('visualizations/bivariate/creditgrade_creditscore.png')
+
+ggplot(aes(x=IncomeRange, y=CreditScoreMean), data=subset(df, df$CreditScoreMean > 50)) +
+  geom_jitter(alpha=.03) +
+  ggtitle('Mean Credit Scores by Income') +
+  theme(axis.text.x = element_text(angle=45, vjust=.95, hjust=.95)) +
+  ggsave('visualizations/bivariate/creditscore_income.png')
+
+ggplot(aes(x=ListingCategory..numeric., y=IncomeRange), data=subset(df, df$IncomeRange!='Not employed' & df$IncomeRange!='Not displayed')) +
+  geom_jitter(alpha=.01) +
+  scale_x_continuous(limits = c(1,21), breaks=seq(1,20,1), labels = listingNames) +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=.95)) +
+  xlab('Loan Listing Type') +
+  ggtitle('Income Range by Loan Type\nWho is financing what?') +
+  ggsave('visualizations/bivariate/incomerange_loantype.png')
+
+ggplot(aes(x=LoanStatus), y=LoanStatus, data=df) +
+  geom_bar(aes(y=..count../sum(..count..))) +
+  theme(axis.text.x = element_text(angle=45, vjust=.95, hjust=.95)) +
+  facet_wrap(~df$IsBorrowerHomeowner) +
+  ggtitle('Comparing Loan Status by Homeowernship') +
+  ggsave('visualizations/bivariate/loanstatus_homeownership.png')
+
+ggplot(aes(x=LoanStatus, y=EmploymentStatus), data=df) +
+  geom_jitter(alpha=.01) +
+  theme(axis.text.x = element_text(angle=45, vjust=.95, hjust=.95))
+  ggtitle('Employment Status by Loan Status') +
+  ggsave('visualizations/bivariate/employment_loanstatus.png')
 
 ```
 
 # Bivariate Analysis
-
-> **Tip**: As before, summarize what you found in your bivariate explorations
-here. Use the questions below to guide your discussion.
 
 ### Talk about some of the relationships you observed in this part of the \
 investigation. How did the feature(s) of interest vary with other features in \
