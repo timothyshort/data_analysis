@@ -1,15 +1,19 @@
+---
+output:
+  pdf_document: default
+  html_document: default
+---
 Loan Data Case Study by Timothy Short
 ========================================================
 
 ```{r echo=FALSE, packages}
 library(ggplot2)
 library(plyr)
+library(gridExtra)
 ```
 
 ```{r echo=FALSE, Load_the_Data}
 df = read.csv('data/prosperLoanData.csv', header=T)
-head(df)
-names(df)
 ```
 
 There are 113,937 observations with 81 variables to analyze. Variables include
@@ -22,9 +26,13 @@ to upper income customers, to analyzing what products customers will seek
 to finance, to the credit worthiness of the borrower and / or the loan.
 
 We want to analyze the various Loan Status' and see which variables seem to
-impact and help identify trends among a borrower's loan. Below are
+impact and help identify trends among a borrower's loan. Below are some
+initial data investigations.
 
-```{r}
+```{r eval=FALSE}
+head(df)
+names(df)
+
 print(summary(na.omit(df)))
 #Borrower Profile
 summary((df$CreditScoreRangeLower + df$CreditScoreRangeLower)/2)
@@ -52,7 +60,18 @@ df$CreditScoreMean = (df$CreditScoreRangeUpper + df$CreditScoreRangeLower)/2
 df$CreditGrade = factor(df$CreditGrade, levels = c('NC', 'HR', 'E', 'D', 'C', 'B', 'A', 'AA'))
 
 #Factor income levels
-df$IncomeRange = factor(df$IncomeRange, levels = c('$0', '$1-24,999', '$25,000-49,999', '$50,000-74,999', '$75,000-99,999', '$100,000+',  'Not displayed', 'Not employed'))
+df$IncomeRange = factor(df$IncomeRange,
+  levels = c('$0', '$1-24,999', '$25,000-49,999', '$50,000-74,999',
+             '$75,000-99,999', '$100,000+',  'Not displayed', 'Not employed'))
+
+#Define loan status category summary: good-standing or bad-standing or late
+df$LoanStatusBinary =
+  ifelse(df$LoanStatus=='Current' | df$LoanStatus=='Completed' | df$LoanStatus=='FinalPaymentInProgress', 'Good',
+    ifelse(df$LoanStatus=='Cancelled' | df$LoanStatus=='Chargedoff' | df$LoanStatus=='Defaulted','Bad',
+      'Late'))
+
+#Income in annual terms
+df$StatedAnnualIncome = df$StatedMonthlyIncome * 12
 
 #Define variable analysis as array
 borrowerProfile = c( "CreditScoreMean" , "OpenCreditLines" , "IncomeRange" ,
@@ -67,7 +86,7 @@ loanData = c( "LoanStatus" , "LoanCurrentDaysDelinquent" , "CreditGrade" , "Mont
 
 # Univariate Plots
 
-```{r echo=FALSE, Univariate_Plots: Loan Data}
+```{r echo=FALSE, 'Univariate_Plots: LoanData'}
 #Bar graph to show the count of each loan status
 ggplot(aes(x=LoanStatus), y=count(LoanStatus), data=df) +
   geom_bar() + 
@@ -115,7 +134,7 @@ ggplot(df, aes(x=LoanOriginalAmount)) +
 ```
 
 
-```{r echo=FALSE, Univariate_Plots: Borrower Profile}
+```{r echo=FALSE, 'Univariate_Plots: Borrower Profile'}
 #Histogram to show total credit inquiries of each loan's borrower
 ggplot(aes(x=TotalInquiries), y=count(df$TotalInquiries), data=df) +
   geom_histogram(binwidth = 1) +
@@ -144,11 +163,20 @@ ggplot(data=df, aes(x=CreditScoreMean)) +
   ggsave('visualizations/univariate-borrowerprofile/creditscores.png')
 
 #Histogram of borrowers debt-to-income ratio
-ggplot(aes(x=DebtToIncomeRatio), data=df) +
+p1 = ggplot(aes(x=DebtToIncomeRatio), data=df) +
+  geom_histogram(bins=50) +
+  ggtitle('Distribution of Borrowers Debt to Income Ratio')
+p2 = ggplot(aes(x=DebtToIncomeRatio), data=df) +
   xlim(0,1) +
   geom_histogram() +
-  ggtitle('Distribution of Borrowers Debt to Income Ratio')
-  ggsave('visualizations/univariate-borrowerprofile/debtincomeratio.png')
+  ggtitle('Distribution of Borrowers Debt to Income Ratio\nFrom 0 to 1')
+p3 = ggplot(aes(x=DebtToIncomeRatio), data=df) +
+  xlim(1,10) +
+  geom_histogram() +
+  ggtitle('Distribution of Borrowers Debt to Income Ratio\nFrom 1 to 10')
+grid.arrange(p1, p2, p3)
+g= arrangeGrob(p1, p2, p3)
+ggsave('visualizations/univariate-borrowerprofile/debtincomeratio.png', g)
 
 #Bar graph of borrowers employment status
 ggplot(aes(x=EmploymentStatus), y=count(EmploymentStatus), data=subset(df, df$EmploymentStatus!="")) +
@@ -184,7 +212,7 @@ predict the result of loans that are past due.
 # Bivariate Plots Section
 
 ```{r echo=FALSE, Bivariate_Plots}
-ggplot(data=df, aes(x=ListingCategory..numeric., y=LoanStatus)) +
+ggplot(data=df, aes(x=ListingCategory..numeric., y=LoanStatusBinary)) +
   geom_jitter(alpha=.1, size=.01, width=.3, height=.3) +
   scale_x_continuous(limits = c(1,21), breaks=seq(1,20,1), labels = listingNames) +
   theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=.95)) +
@@ -196,20 +224,33 @@ ggplot(data=df, aes(x=ListingCategory..numeric., y=LoanOriginalAmount)) +
   stat_summary(fun.y='median', geom='bar') +
   scale_x_continuous(limits = c(0,21), breaks=seq(1,20,1), labels = listingNames) +
   theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=.95)) +
+  geom_hline(yintercept = 6500) +
   xlab('Loan Listing Type') +
   ylab('Median Original Loan Amount') +
   ggtitle('Median Loan by Loan Type') +
   ggsave('visualizations/bivariate/loanamount_loantype.png')
 
 ggplot(data=df, aes(y=ListingCategory..numeric., x=CreditScoreMean)) +
-  geom_jitter(alpha=.1, size=.1) +
+  geom_jitter(alpha=.05, size=1) +
   scale_y_continuous(limits = c(1,21), breaks=seq(1,20,1), labels = listingNames) +
   scale_x_continuous(limits = c(500, 850), breaks=seq(500,850,50)) +
   theme(axis.text.y = element_text(hjust=.95)) +
+  geom_vline(xintercept=median(df$CreditScoreMean), size=.5) +
   ylab('Loan Listing Type') +
   xlab('Mean Credit Score') +
   ggtitle('Loan Category by Credit Score') +
   ggsave('visualizations/bivariate/loantype_creditscore.png')
+
+ggplot(data=df, aes(y=ListingCategory..numeric., x=StatedAnnualIncome)) +
+  geom_jitter(alpha=.05, size=1) +
+  scale_y_continuous(limits = c(1,21), breaks=seq(1,20,1), labels = listingNames) +
+  scale_x_continuous(limits = c(0,250000)) +
+  theme(axis.text.y = element_text(hjust=.95)) +
+  geom_vline(xintercept=median(df$StatedAnnualIncome), size=.5) +
+  ylab('Loan Listing Type') +
+  xlab('Annual Income') +
+  ggtitle('Loan Category by Income') +
+  ggsave('visualizations/bivariate/loantype_income.png')
 
 ggplot(aes(x=CreditScoreMean, y=CreditGrade), data=subset(df, df$CreditGrade!="" & df$CreditGrade!='NC')) +
   geom_jitter(alpha=.1, size=.1) +
@@ -238,93 +279,183 @@ ggplot(aes(x=LoanStatus), y=LoanStatus, data=df) +
   ggtitle('Comparing Loan Status by Homeowernship') +
   ggsave('visualizations/bivariate/loanstatus_homeownership.png')
 
-ggplot(aes(x=LoanStatus, y=EmploymentStatus), data=df) +
-  geom_jitter(alpha=.01) +
-  theme(axis.text.x = element_text(angle=45, vjust=.95, hjust=.95))
+ggplot(aes(x=EmploymentStatus, y=LoanStatusBinary),
+       data=subset(df, df$EmploymentStatus!='Not available' & df$EmploymentStatus!='Other' & df$EmploymentStatus!='')) +
+  geom_jitter(alpha=.02) +
+  theme(axis.text.x = element_text(angle=45, vjust=.95, hjust=.95)) +
   ggtitle('Employment Status by Loan Status') +
   ggsave('visualizations/bivariate/employment_loanstatus.png')
 
+ggplot(aes(x=IncomeRange, y=LoanStatusBinary),
+       data=subset(df, df$EmploymentStatus!='Not available' & df$EmploymentStatus!='Other' & df$EmploymentStatus!='')) +
+  geom_jitter(alpha=.02, size=.3) +
+  theme(axis.text.x = element_text(angle=45, vjust=.95, hjust=.95)) +
+  ggtitle('Loan Status vs Income') +
+  ggsave('visualizations/bivariate/loanstatus_income.png')
+
+ggplot(aes(x=LoanOriginalAmount, y=LoanStatusBinary),
+       data=subset(df, df$EmploymentStatus!='Not available' & df$EmploymentStatus!='Other' & df$EmploymentStatus!='')) +
+  geom_jitter(alpha=.01, size=1, height=.3) +
+  theme(axis.text.x = element_text(angle=45, vjust=.95, hjust=.95)) +
+  ggtitle('Loan Status vs Loan Amount') +
+  ggsave('visualizations/bivariate/loanstatus_loanamount.png')
 ```
 
 # Bivariate Analysis
 
-### Talk about some of the relationships you observed in this part of the \
-investigation. How did the feature(s) of interest vary with other features in \
-the dataset?
+Not suprisingly, higher income persons had better cedit scores and were more likely
+to stay in good standing on their monthly payment.
 
-### Did you observe any interesting relationships between the other features \
-(not the main feature(s) of interest)?
+The median loan amount across all categories is about $6800, with the highest median
+categories being debt consolidation, business, baby & adoption, boats, and weddings.
+As discovered in the univariate analysis, debt consolidation by far is the largest
+category of loans.
 
-### What was the strongest relationship you found?
+The higher the loan amount, the more likely that the loan will be in good standing.
+This may be intuitive as only higher income persons would qualify for more
+expensive loans.
+
+Most loans seems to follow a somewhat normal distribution among credit scores.
+Popular loan types among those with higher credit scores used debt to finance
+their business, home improvements, and debt consolidation. And, although
+accounting a smaller number of loans, expensive items such as engagement rings,
+baby and adoption, large purchases, and wedding loans
+
+Credit scores, credit grades, and income all tell a similar story. However, there
+is much variance across income. Generally speaking, higher income earners have
+higher credit scores, and therefore their loans are of higher grade.
+
 
 
 # Multivariate Plots Section
 
-> **Tip**: Now it's time to put everything together. Based on what you found in
-the bivariate plots section, create a few multivariate plots to investigate
-more complex interactions between variables. Make sure that the plots that you
-create here are justified by the plots you explored in the previous section. If
-you plan on creating any mathematical models, this is the section where you
-will do that.
-
 ```{r echo=FALSE, Multivariate_Plots}
+ggplot(aes(x=StatedAnnualIncome, y=LoanOriginalAmount), data=subset(df, df$IncomeRange!='Not employed' & df$IncomeRange!='Not displayed')) +
+  geom_jitter(aes(color=LoanStatusBinary), alpha=.3, size=.4) +
+  scale_x_continuous(limits = c(1,250000)) +
+  scale_color_brewer(palette='Set1') +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=.95)) +
+  ggtitle('Loan Amount by Income and Status') +
+  ggsave('visualizations/multivariate/loanamount_income_status.png')
 
+ggplot(aes(x=ListingCategory..numeric., y=StatedAnnualIncome), data=subset(df, df$IncomeRange!='Not employed' & df$IncomeRange!='Not displayed')) +
+  geom_point(aes(color=LoanStatusBinary), alpha=.3) +
+  scale_color_brewer(palette='Set1') +
+  scale_y_continuous(limits = c(1,250000)) +
+  scale_x_continuous(limits = c(1,21), breaks=seq(1,20,1), labels = listingNames) +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=.95)) +
+  ggtitle('Income by Listing Category by Loan Status') +
+  ggsave('visualizations/multivariate/income_category_status.png')
+
+ggplot(aes(x=ListingCategory..numeric., y=LoanOriginalAmount), data=subset(df,
+    df$IncomeRange!='$0' &  df$IncomeRange!='Not employed' & df$IncomeRange!='Not displayed')) +
+  geom_point(aes(color=IncomeRange), alpha=.3) +
+  scale_color_brewer(palette='Set1') +
+  scale_x_continuous(limits = c(1,21), breaks=seq(1,20,1), labels = listingNames) +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=.95)) +
+  facet_wrap(~LoanStatusBinary) +
+  ggtitle('Loan Amounts by Listing Category, by Income and Loan Status') +
+  ggsave('visualizations/multivariate/loanamount_loantype_income-status.png')
+
+ggplot(aes(x=ListingCategory..numeric., y=LoanOriginalAmount), data=subset(df,
+    df$IncomeRange!='$0' &  df$IncomeRange!='Not employed' & df$IncomeRange!='Not displayed')) +
+  geom_point(aes(color=LoanStatusBinary), alpha=.3) +
+  scale_color_brewer(palette='Set1') +
+  scale_x_continuous(limits = c(1,21), breaks=seq(1,20,1), labels = listingNames) +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=.95)) +
+  facet_wrap(~IncomeRange) +
+  ggtitle('Loan Amounts by Listing Category, by Income and Loan Status')
+  ggsave('visualizations/multivariate/loanamount_loantype_status-income.png')
+
+ggplot(aes(x=LoanOriginalAmount, y=IncomeRange), data=subset(df,
+    df$IncomeRange!='$0' &  df$IncomeRange!='Not employed' & df$IncomeRange!='Not displayed')) +
+  geom_jitter(aes(color=IsBorrowerHomeowner), alpha=.3) +
+  scale_color_brewer(palette='Set1') +
+  facet_wrap(~LoanStatusBinary) +
+  ggtitle('Income Range by Loan Amount\nGrouped By Homeowner and Faceted by Status') +
+  ggsave('visualizations/multivariate/income_amount-homeowner-status.png')
+
+ggplot(aes(x=StatedAnnualIncome, y=LoanOriginalAmount),
+       data=subset(df, df$IncomeRange=="$25,000-49,999")) +
+  geom_point(aes(color=LoanStatusBinary), alpha=.3, size=.5) +
+  scale_x_continuous(limits = c(25000,50000)) +
+  scale_color_brewer(palette='Set1') +
+  ggtitle('Loan Amounts by Listing Category, by Income and Loan Status') +
+  facet_wrap(~ListingCategory..numeric.) +
+  ggtitle('Loan Amount by Annual Income of $25,000 - $49,999\nGrouped by Status and Faceted by Category') +
+  ggsave('visualizations/multivariate/lowerincome_loanamount-status-category.png')
 ```
 
 # Multivariate Analysis
 
-### Talk about some of the relationships you observed in this part of the \
-investigation. Were there features that strengthened each other in terms of \
-looking at your feature(s) of interest?
+Smaller loans among lower income borrowers were more likely to be in a bad
+state, whereas higher loans among upper income borrowers were more likely
+to be in a good state.
 
-### Were there any interesting or surprising interactions between features?
-
-### OPTIONAL: Did you create any models with your dataset? Discuss the \
-strengths and limitations of your model.
+Personal loans and Student use across all income types generated were the
+most likely to be in a bad loan state.
 
 ------
 
 # Final Plots and Summary
 
-> **Tip**: You've done a lot of exploration and have built up an understanding
-of the structure of and relationships between the variables in your dataset.
-Here, you will select three plots from all of your previous exploration to
-present here as a summary of some of your most interesting findings. Make sure
-that you have refined your selected plots for good titling, axis labels (with
-units), and good aesthetic choices (e.g. color, transparency). After each plot,
-make sure you justify why you chose each plot by describing what it shows.
-
 ### Plot One
 ```{r echo=FALSE, Plot_One}
-
+ggplot(aes(x=StatedAnnualIncome, y=LoanOriginalAmount),
+       data=subset(df, df$IncomeRange=="$25,000-49,999")) +
+  geom_point(aes(color=LoanStatusBinary), alpha=.3, size=.5) +
+  scale_x_continuous(limits = c(25000,50000)) +
+  scale_color_brewer(palette='Set1') +
+  ggtitle('Loan Amounts by Listing Category, by Income and Loan Status') +
+  facet_wrap(~ListingCategory..numeric.) +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=.95)) +
+  ggtitle('Loan Amount by Annual Income of $25,000 - $49,999\nGrouped by Status and Faceted by Category') +
+  ggsave('visualizations/final/lowerincome_loanamount-status-category.png')
 ```
 
 ### Description One
-
+This visualization communicates that lower income borrowers can be risky
+investments when using for debt consolidation or personal loans.
 
 ### Plot Two
 ```{r echo=FALSE, Plot_Two}
-
+ggplot(aes(x=StatedAnnualIncome, y=LoanOriginalAmount), data=subset(df, df$IncomeRange!='Not employed' & df$IncomeRange!='Not displayed')) +
+  geom_jitter(aes(color=LoanStatusBinary), alpha=.3, size=.4) +
+  scale_x_continuous(limits = c(1,250000)) +
+  scale_color_brewer(palette='Set1') +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=.95)) +
+  ggtitle('Loan Amount by Income and Status') +
+  ggsave('visualizations/final/loanamount_income_status.png')
 ```
 
 ### Description Two
-
+This visualization tells us that higher income borrowers tend to borrow
+more money, but are more likely to remain in good standing.
 
 ### Plot Three
 ```{r echo=FALSE, Plot_Three}
-
+ggplot(aes(x=ListingCategory..numeric., y=LoanOriginalAmount), data=subset(df,
+    df$IncomeRange!='$0' &  df$IncomeRange!='Not employed' & df$IncomeRange!='Not displayed')) +
+  geom_point(aes(color=IncomeRange), alpha=.3) +
+  scale_color_brewer(palette='Set1') +
+  scale_x_continuous(limits = c(1,21), breaks=seq(1,20,1), labels = listingNames) +
+  theme(axis.text.x = element_text(angle=90, vjust=.5, hjust=.95)) +
+  facet_wrap(~LoanStatusBinary) +
+  ggtitle('Loan Amounts by Listing Category, by Income and Loan Status') +
+  ggsave('visualizations/final/loanamount_loantype_income-status.png')
 ```
 
 ### Description Three
+This graph tells us that across income spectrums, the most risky loans are
+for debt consolidation, home improvements, business loans, and student use.
+Loans used for baby and adoption, cosmetic proecedures, engagement rings,
+and taxes are significantly likely to be in better standing.
 
 ------
 
 # Reflection
 
-> **Tip**: Here's the final step! Reflect on the exploration you performed and
-the insights you found. What were some of the struggles that you went through?
-What went well? What was surprising? Make sure you include an insight into
-future work that could be done with the dataset.
-
-> **Tip**: Don't forget to remove this, and the other **Tip** sections before
-saving your final work and knitting the final report!
+There was a lot of data to analyze. It took some time to get a sense of what
+the dataset contains. Then I needed to make some adjustments so that I can
+work with it the way I want to. I added a few columns, refactored some
+variables, and had to identify null/empty or ambiguous terms.
